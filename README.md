@@ -1,10 +1,12 @@
-# MCP Taschenrechner-Server
+# Mini-MCP
 
-Dieses Projekt zeigt, wie du mit dem MCP Python SDK einen einfachen MCP-Server erstellst, der eine Taschenrechner-Funktion (Addition) als Tool bereitstellt. Der Server kann mit jedem MCP-kompatiblen Client (z.B. Claude Desktop) verwendet werden.
+Dieses Projekt zeigt, wie du mit dem MCP Python SDK einen MCP-Server erstellst, der verschiedene Funktionen bereitstellt: Tools (wie eine Taschenrechner-Funktion), Resources (zum Bereitstellen von Dateiinhalten) und Prompt Templates (für strukturierte Ausgaben). Der Server kann mit jedem MCP-kompatiblen Client (z.B. Claude Desktop) verwendet werden.
 
 ## Features
 
 - **add**: Addiert zwei Zahlen und gibt das Ergebnis zurück.
+- **file://pysdk.md**: Resource zum Bereitstellen von Dateiinhalten (pysdk.md vom Desktop)
+- **meeting_prompt**: Prompt Template für Besprechungszusammenfassungen basierend auf meeting_prompt.md
 
 ---
 
@@ -59,10 +61,17 @@ Dieses Projekt zeigt, wie du mit dem MCP Python SDK einen einfachen MCP-Server e
 ## Beispielcode: server.py
 
 ```python
-from mcp.server.fastmcp import FastMCP
+from mcp.server.fastmcp import FastMCP, Context
+import os
+import asyncio
+from pathlib import Path
 
 # MCP-Server initialisieren
-mcp = FastMCP("Taschenrechner")
+mcp = FastMCP(
+    "Taschenrechner",
+    host=os.getenv("HOST", "localhost"),
+    port=int(os.getenv("PORT", "3000"))
+)
 
 # Tool: Addition
 @mcp.tool()
@@ -70,8 +79,42 @@ def add(a: int, b: int) -> int:
     """Addiert zwei Zahlen"""
     return a + b
 
+# Resource: Inhalt von pysdk.md bereitstellen
+@mcp.resource("file://pysdk.md")
+async def pysdkfile() -> str:
+    desktop_path = Path.home() / "Desktop"
+    file_path = desktop_path / "pysdk.md"
+    try:
+        with open(file_path, "r", encoding="utf-8") as file:
+            return file.read()
+    except Exception as e:
+        return f"Error reading pysdk.md: {str(e)}"
+
+# MCP Prompt: meeting_prompt
+@mcp.prompt()
+def meeting_prompt(meeting_date: str, meeting_title: str, transcript: str) -> str:
+    """Erstellt eine Besprechungszusammenfassung basierend auf dem Template aus meeting_prompt.md."""
+    template_path = Path(__file__).parent / "meeting_prompt.md"
+    try:
+        with open(template_path, "r", encoding="utf-8") as f:
+            template = f.read()
+    except Exception as e:
+        return f"Fehler beim Laden des Templates: {str(e)}"
+    # Template-Variablen ersetzen
+    result = template.replace("{{ meeting_date }}", meeting_date)
+    result = result.replace("{{ meeting_title }}", meeting_title)
+    result = result.replace("{{ transcript }}", transcript)
+    return result
+
+async def main():
+    transport = os.getenv("TRANSPORT", "stdio")
+    if transport == 'sse':
+        await mcp.run_sse_async()
+    else:
+        await mcp.run_stdio_async()
+
 if __name__ == "__main__":
-    mcp.run()
+    asyncio.run(main())
 ```
 
 ---
