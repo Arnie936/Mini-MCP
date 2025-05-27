@@ -1,0 +1,13 @@
+{
+  "mcpServers": {
+    "meeting-assistant-sse": {
+      "command": "C:/Users/Arnold/Desktop/Kurs/.venv/Scripts/python.exe",
+      "args": ["C:/Users/Arnold/Desktop/Kurs/server.py"],
+      "env": {
+        "TRANSPORT": "sse",
+        "HOST": "localhost",
+        "PORT": "3000"
+      }
+    }
+  }
+} 

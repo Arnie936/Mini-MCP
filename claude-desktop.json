@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "meeting-assistant": {
+      "command": "C:/Users/Arnold/Desktop/Kurs/.venv/Scripts/python.exe",
+      "args": ["C:/Users/Arnold/Desktop/Kurs/server.py"],
+      "env": {
+        "TRANSPORT": "stdio"
+      }
+    }
+  }
+} 
